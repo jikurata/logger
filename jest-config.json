@@ -1,0 +1,8 @@
+{
+  "globals": {
+    "NODE_ENV": "development"
+  },
+  "verbose": true,
+  "bail": true,
+  "testPathIgnorePatterns": ["<rootDir>/node_modules/", "<rootDir>/build/", "<rootDir>/dist", "<rootDir>/.vscode"]
+}
