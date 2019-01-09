@@ -1,8 +1,11 @@
 'use strict';
+const fs = require('fs');
 const Logger = require('../index.js');
 
 describe('Functional tests', () => {
   Logger.showTimestamp = false;
+  Logger.recordLog = false;
+  Logger.printMessage = false;
   describe('info logging', () => {
     test('Appends \x1b[32m to the message', () => {
       const x = 5;
@@ -36,6 +39,18 @@ describe('Functional tests', () => {
       const o = { 0: 1, foo: 'bar' };
       const a = ['a', 'b'];
       expect(Logger.info(o, 'and', a)).toMatch( `{ 0: 1, foo: bar } and [ a,b ]`);
+    });
+  });
+  describe('Records log outputs into a file', () => {
+    test('Creates logger.log', () => {
+      Logger.recordLog = true;
+      Logger.log('foo');
+      const exists = fs.existsSync('logger.log');
+      if ( exists ) {
+        const content = fs.readFileSync('logger.log', {encoding: 'utf8'});
+        fs.unlinkSync('logger.log');
+      }
+      expect(exists).toBe(true);
     });
   });
 });

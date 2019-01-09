@@ -1,7 +1,7 @@
 {
   "name": "@jikurata/logger",
   "version": "0.0.0",
-  "description": "Color coded console printing and recording",
+  "description": "Expanded console logging and recording",
   "main": "index.js",
   "scripts": {
     "test": "jest --config jest-config.json"
