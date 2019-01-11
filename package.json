@@ -1,7 +1,8 @@
 {
   "name": "@jikurata/logger",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Expanded console logging and recording",
+  "repository": "https://github.com/jikurata/logger",
   "main": "index.js",
   "scripts": {
     "test": "jest --config jest-config.json"
