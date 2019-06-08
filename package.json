@@ -1,7 +1,7 @@
 {
   "name": "@jikurata/logger",
-  "version": "0.0.1",
-  "description": "Expanded console logging and recording",
+  "version": "0.1.0",
+  "description": "Expanded console logging",
   "repository": "https://github.com/jikurata/logger",
   "main": "index.js",
   "scripts": {
