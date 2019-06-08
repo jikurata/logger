@@ -1,4 +1,4 @@
-# Logger v0.1.0
+# Logger v0.2.0
 Expanded console logging and recording
 ---
 ## Install
@@ -63,10 +63,11 @@ Logger.historyLimit = 10; // Sets limit to the 10 most recent log entries
         *showTimestamp*: {Boolean} (Default: true) Displays Timestamp when printing a message<br>
         *emitLog*: {Boolean} (Default: true) Emits a log event whenever an entry is created<br>
     - **Methods**:<br>
-        {Log} *info*: Write a message to stdout with the info format<br>
-        {Log} *log*: Alias for info<br>
-        {Log} *warn*: Write a message to stderr with the warning format<br>
-        {Log} *error*: Write a error message to stderr with the error format<br>
+        {Log} *info(...args)*: Write a message to stdout with the info format<br>
+        {Log} *log(...args)*: Alias for info<br>
+        {Log} *warn(...args)*: Write a message to stderr with the warning format<br>
+        {Log} *error(...args)*: Write a error message to stderr with the error format<br>
+        {Void} *printLog(log {Log})*: Formats a Log object and prints to stdout<br>
 
 - **object** Log<br>
     - **Properties**:<br>
@@ -75,6 +76,9 @@ Logger.historyLimit = 10; // Sets limit to the 10 most recent log entries
         *message*: {String} The content of the log<br>
 ## Version Log
 ---
+### v0.2.0
+- Add printLog method to write existing Log objects to stdout
+
 ### v0.1.0
 - Removed log recording functionality
 - Removed Timestamp object
