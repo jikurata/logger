@@ -1,26 +1,28 @@
 'use strict';
 
-class Log {
-  constructor(type, timestamp, message) {
+class Record {
+  constructor(o = {}) {
     Object.defineProperty(this, 'type', {
-      value: type,
+      value: o.type,
       enumerable: true,
       writable: false,
       configurable: false
     });
     Object.defineProperty(this, 'timestamp', {
-      value: timestamp,
+      value: o.timestamp,
       enumerable: true,
       writable: false,
       configurable: false
     });
     Object.defineProperty(this, 'message', {
-      value: message,
+      value: o.message,
       enumerable: true,
       writable: false,
       configurable: false
     });
+    this.textColor = o.textColor;
+    this.backgroundColor = o.backgroundColor;
   }
 }
 
-module.exports = Log;
+module.exports = Record;

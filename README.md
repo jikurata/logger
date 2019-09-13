@@ -1,4 +1,4 @@
-# Logger v0.2.1
+# Logger v0.2.2
 Expanded console logging and recording
 ---
 ## Install
@@ -76,6 +76,9 @@ Logger.historyLimit = 10; // Sets limit to the 10 most recent log entries
         *message*: {String} The content of the log<br>
 ## Version Log
 ---
+### v0.2.2
+
+
 ### v0.2.1
 - Refactored Jest tests to Taste tests
 
