@@ -1,13 +1,8 @@
 'use strict';
-const EventEmitter = require('events');
-const InputStream = require('./InputStream.js');
+const EventEmitter = require('@jikurata/events');
+const {format} = require('util');
 const State = require('./State.js');
 const Record = require('./Record.js');
-const init = Symbol('init');
-const statement = Symbol('statement');
-const formatArguments = Symbol('formatArguments');
-const format = Symbol('format');
-const createRecord = Symbol('createRecord');
 
 let instance = null;
 
@@ -16,37 +11,34 @@ class Logger extends EventEmitter {
     if ( instance ) return instance;
     super();
     instance = this;
-    Object.defineProperty(this, 'id', {
-      value: process.pid,
-      enumerable: true,
-      writable: false,
-      configurable: false
-    });
-    Object.defineProperty(this, 'stream', {
-      value: new InputStream(),
-      enumerable: true,
-      writable: false,
-      configurable: false 
-    });
     Object.defineProperty(this, 'state', {
       value: new State({
         'HISTORY_LIMIT': 50,
-        'DEFAULT_LOG_COLOR': '\x1b[0m',
-        'INFO_LOG_COLOR': '\x1b[32m',
-        'WARN_LOG_COLOR': '\x1b[1m\x1b[35m',
-        'ERROR_LOG_COLOR': '\x1b[1m\x1b[31m',
+        'COLOR': {
+          'default': '\x1b[0m',
+          'boolean': '\x1b[38;5;27m',
+          'number': '\x1b[38;5;64m',
+          'string': '\x1b[38;5;130m',
+          'text': '\x1b[38;5;250m',
+          'array': '\x1b[38;5;248m',
+          'object': '\x1b[38;5;248m',
+          'function': '\x1b[38;5;30m',
+          'bigint': '\x1b[38;5;179m', 
+          'symbol': '\x1b[38;5;99m',
+          'property': '\x1b[38;5;75m',
+          'undefined': '\x1b[38;5;240m',
+          'null': '\x1b[38;5;240m',
+          'circular': '\x1b[38;5;171m',
+          'info': '\x1b[38;5;28m',
+          'warn': '\x1b[38;5;100m',
+          'error': '\x1b[38;5;88m',
+          'timestamp': '\x1b[38;5;240m'
+        },
+        'USE_COLORS': true,
         'PRINT_MESSAGE': true,
         'SHOW_TIMESTAMP': true,
-        'SHOW_TIMEZONE': true,
-        'EMIT_LOG': true,
-        'ARRAY_FORMAT': {
-          'depth': 2,
-          'newline': false
-        },
-        'OBJECT_FORMAT': {
-          'depth': 2,
-          'newline': false
-        }
+        'SHOW_TIMEZONE': false,
+        'EMIT_RECORD': true
       }),
       enumerable: true,
       writable: false,
@@ -58,147 +50,238 @@ class Logger extends EventEmitter {
       writable: false,
       configurable: false
     });
-    this[init]();
-  }
-
-  [init]() {
-    this.stream.pipe(process.stdout);
   }
 
   /**
-   * Alias for info
-   * @param  {...any} args 
+   * @param {String} type
+   * @param  {...Any} args 
+   */
+  _print(type, ...args) {
+    const r = this.createRecord(type, ...args);
+    this.printRecord(r);
+    return r;
+  }
+
+  /**
+   * @param  {...Any} args
+   * @returns {Record}
    */
   log(...args) {
-    return this.info(...args);
+    return this._print('info', ...args);
   }
 
-  info(...args) {
-    const log = this[createRecord]('info', args);
-    if ( this.printMessage ) {
-      const s = this[statement](log);
-      process.stdout.write(s);
-    }
-    return log;
-  }
-
-  warn(...args) {
-    const log = this[createRecord]('warn', args);
-    if ( this.printMessage ) {
-      const s = this[statement](log);
-      process.stderr.write(s);
-    }
-    return log;
-  }
-
-  error(...args) {
-    const log = this[createRecord]('error', args);
-    if ( this.printMessage ) {
-      const s = this[statement](log);
-      process.stderr.write(s);
-    }
-    return log;
-  }
-  
   /**
-   * Formats a Record object into a console message
-   * @param {Record} record 
+   * @param  {...Any} args
+   * @returns {Record}
    */
-  printRecord(record) {
-    if ( this.printMessage && record instanceof Record ) {
-      const s = this[statement](record);
-      process.stdin.write(s);
-    }
+  info(...args) {
+    return this._print('info', ...args);
   }
 
-  [createRecord](type, args) {
+  /**
+   * @param  {...Any} args
+   * @returns {Record}
+   */
+  warn(...args) {
+    return this._print('warn', ...args);
+  }
+
+  /**
+   * @param  {...Any} args
+   * @returns {Record}
+   */
+  error(...args) {
+    return this._print('error', ...args);
+  }
+
+  /**
+   * Create a Record object
+   * @param {String} type 
+   * @param  {...Any} args 
+   * @returns {Record}
+   */
+  createRecord(type, ...args) {
     const t = Date.now();
-    const msg = this[formatArguments](args);
-    const record = new Record(type, t, msg);
+    const s = this.formatColors(args);
+    const record = new Record({
+      type: type,
+      timestamp: t,
+      message: format(...args),
+      colored: s
+    });
     // Add record to history
     this.history.push(record);
     // Remove the first entry while the current size exceeds the history limit
     let count = this.history.length - this.state.HISTORY_LIMIT;
-    if ( count > 0 ) for ( count; count--; ) this.history.shift();
-    if ( this.emitLog ) this.emit('log', log);
-    return log;
+    if ( count > 0 ) {
+      for ( count; count--; ) {
+        this.history.shift();
+      }
+    }
+    if ( this.emitRecord ) {
+      this.emit('record', record);
+    }
+    return record;
   }
 
-  [statement](log) {
-    let s = '';
-    let code = this.state.DEFAULT_LOG_COLOR;
-    // Set the print color of the message
-    switch(log.type) {
-    case 'info': 
-      code = this.state.INFO_LOG_COLOR
-      break;
-    case 'warn':
-      code = this.state.WARN_LOG_COLOR;
-      break;
-    case 'error':
-      code = this.state.ERROR_LOG_COLOR;
-      break;
-    default: break;
+  /**
+   * Format a record to be printed in console
+   * @param {Record} record 
+   */
+  printRecord(record) {
+    if ( !this.printMessage ) {
+      return;
     }
+
+    let s = `# `;
     if ( this.showTimestamp ) {
-      // Convert the timestamp into a readable format
-      const ts = new Date(log.timestamp).toString().split(' ').slice(1, (this.showTimezone) ? 6 : 5).join(' ');
-      s = `[${code}${ts}${this.state.DEFAULT_LOG_COLOR}] ${log.message}`;
+      const ts = new Date(record.timestamp).toString().split(' ').slice(1, (this.showTimezone) ? 6 : 5).join(' ');
+      s += `${this.getColor('timestamp')}[${ts}] `;
     }
-    else s = `${code}${log.message}${this.state.DEFAULT_LOG_COLOR}`;
-    return s + '\n';
+    s += (this.useColors) ? record.colored : record.message + '\n';
+    
+    switch(record.type) {
+      case 'info': 
+        s = `${this.getColor('info')}${s}`;
+        return console.info(s);
+      case 'warn': 
+        s = `${this.getColor('warn')}${s}`;
+        return console.warn(s);
+      case 'error': 
+        s = `${this.getColor('error')}${s}`;
+        return console.error(s);
+      default: 
+        s = `${this.getColor('default')}${s}`
+        return console.log(s);
+    }
   }
 
-  [formatArguments](args) {
-    let s = '';
-    args.forEach(arg => s += this[format](arg));
-    s = s.trim().replace(/\s+/g, ' ');
-    return s;
+  /**
+   * Stringify arguments and append color codes to data types
+   * @param {Array<Any>} args
+   * @returns {String} 
+   */
+  formatColors(args) {
+    const objStack = [];
+    const formatter = (arg) => {
+      // Check arg's data type
+      const type = this.getDataType(arg);
+      const argStr = format(arg);
+      if ( type === 'object' ) {
+        const objectClass = arg.constructor.name;
+        // Check for cyclic references
+        if ( objStack.indexOf(arg) === -1 ) {
+          objStack.push(arg);
+          let substr = '';
+          // Format error objects
+          if ( arg instanceof Error ) {
+            if ( arg.stack ) {
+              const split = arg.stack.split(':');
+              for ( let i = 0; i < split.length; ++i ) {
+                if ( i === 0 ) {
+                  substr += `${this.getColor('error')}`;
+                }
+                else if ( i === 1 ) {
+                  substr += `${this.getColor('text')}`;
+                }
+                substr += `${split[i]}:`;
+              }
+            }
+            else {
+              substr = `${this.getColor('error')}${arg.name}: ${this.getColor('text')}${arg.message}`;
+            }
+          }
+          else if ( Array.isArray(arg) ) {
+            // Format an array
+            substr = `${this.getColor('array')}[ `;
+            for ( let i = 0; i < arg.length; ++i ) {
+              substr += `${formatter(arg[i])}`;
+              substr += (i < arg.length - 1) ? `${this.getColor('array')}, ` : ' ';
+            }
+            substr += `${this.getColor('array')}]`;
+          }
+          else {
+            // Format a generic object type
+            substr = `${this.getColor('object')}${(objectClass && objectClass !== 'Object') ? objectClass + ' ' : ''}{ `;
+            const keys = Object.keys(arg);
+            for ( let i = 0; i < keys.length; ++i ) {
+              const key = keys[i];
+              const value = arg[key];
+              substr += `${this.getColor('property')}${key}: ${formatter(value)}`;
+              substr += (i < keys.length - 1) ? `${this.getColor('object')}, ` : ' ';
+            }
+            substr += `${this.getColor('object')}}`;
+          }
+
+          // Format complete for current object, remove from stack
+          objStack.pop();
+          return substr;
+        }
+        else {
+          // Object is a cyclic reference
+          return `${this.getColor('circular')}[Circular ${(objectClass)}]`;
+        }
+      }
+      else if ( type === 'string' ) {
+        // If the string is an object value, use the string color code
+        if ( objStack.length ) {
+          return `${this.getColor('string')}\'${argStr}${this.getColor('string')}\'`;
+        }
+        return `${this.getColor('text')}${argStr}`;
+      }
+      else {
+        return `${this.getColor(type)}${argStr}`;
+      }
+    }
+
+    let a = [];
+    for ( let i = 0; i < args.length; ++i ) {
+      a.push(formatter(args[i]));
+    }
+
+    return format(...a);
   }
 
-  [format](arg, depth = 0) {
-    let s = '';
-    if ( arg === null ) s = 'null';
-    else if ( typeof arg === 'function' ) {
-      s += `function`;
-      if ( arg.name ) s += ` ${arg.name}`;
-      s += '(';
-      if ( arg.param ) s += `${arg.param}`;
-      s += ')';
-      if ( arg.statements ) s += `${arg.statement}`;
+  /**
+   * Return the data type of arg
+   * @param {Any} arg
+   * @returns {String}
+   */
+  getDataType(arg) {
+    if ( arg === null ) {
+      return 'null';
     }
-    else if ( arg instanceof Error ) {
-      if ( arg.name ) s += `${arg.name}`;
-      if ( arg.code ) s += `(${arg.code}) `;
-      if ( arg.message ) s += `${arg.message}`;
-      if ( arg.stack ) s += `: ${arg.stack}`;
+    else if ( arg === undefined ) {
+      return 'undefined';
     }
-    else if ( Array.isArray(arg) && depth < this.state.ARRAY_FORMAT.depth ) {
-      const space = (this.state.ARRAY_FORMAT.newline) ? '\n' : ' ';
-      s += `[${space}`;
-      for ( let i = 0; i < arg.length; ++i ) {
-        const v = arg[i];
-        s += `${this[format](v, ++depth)}`;
-        if ( i < arg.length - 1 ) {
-          s += `,${space}`;
-        }
+    else if ( arg && typeof arg === 'object' ) {
+      return 'object';
+    }
+    else {
+      return typeof arg;
+    }
+  }
+
+  /**
+   * Get an ANSI color code for the corresponding type
+   * @param {String} color 
+   * @returns {String}
+   */
+  getColor(type) {
+    return (this.state.COLOR.hasOwnProperty(type)) ? this.state.COLOR[type] : this.state.COLOR.text;
+  }
+
+  /**
+   * Remove all ANSI escape attribute codes
+   * @param {String} s 
+   */
+   removeANSIColors(s) {
+    const matches = s.match(/\x1b\[[\d|;]*m/gmi);
+    if ( matches ) {
+      for ( let i = 0; i < matches.length; ++i ) {
+        s = s.replace(matches[i], '');
       }
-      s += ']';
     }
-    else if ( typeof arg === 'object' && depth < this.state.OBJECT_FORMAT.depth ) {
-      const space = (this.state.OBJECT_FORMAT.newline) ? '\n' : ' ';
-      s += `{${space}`;
-      const keys = Object.keys(arg);
-      for ( let i = 0; i < keys.length; ++i ) {
-        const key = keys[i];
-        s += `${prop}: ${this[format](arg[key], ++depth)}`;
-        if ( i < keys.length - 1 ) {
-          s += `,${space}`;
-        }
-      }
-      s += '}';
-    }
-    else s += ` ${o} `;
     return s;
   }
 
@@ -208,6 +291,14 @@ class Logger extends EventEmitter {
 
   set historyLimit(num) {
     if ( num > -1 ) this.state.HISTORY_LIMIT = num;
+  }
+
+  get useColors() {
+    return this.state.USE_COLORS;
+  }
+
+  set useColors(bool) {
+    this.state.USE_COLORS = !!bool;
   }
 
   get printMessage() {
@@ -234,12 +325,12 @@ class Logger extends EventEmitter {
     this.state.SHOW_TIMEZONE = !!bool;
   }
 
-  get emitLog() {
-    return this.state.EMIT_LOG;
+  get emitRecord() {
+    return this.state.EMIT_RECORD;
   }
 
-  set emitLog(bool) {
-    this.state.EMIT_LOG = !!bool;
+  set emitRecord(bool) {
+    this.state.EMIT_RECORD = !!bool;
   }
 }
 

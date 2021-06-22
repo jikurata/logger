@@ -20,8 +20,12 @@ class Record {
       writable: false,
       configurable: false
     });
-    this.textColor = o.textColor;
-    this.backgroundColor = o.backgroundColor;
+    Object.defineProperty(this, 'colored', {
+      value: o.colored,
+      enumerable: true,
+      writable: false,
+      configurable: false
+    });
   }
 }
 

@@ -1,19 +1,23 @@
 {
   "name": "@jikurata/logger",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "Expanded console logging",
   "repository": "https://github.com/jikurata/logger",
   "main": "index.js",
   "scripts": {
-    "test": "node ./test/index.test.js"
+    "test": "node ./test/logger.test.js"
   },
   "keywords": [
     "console",
-    "log"
+    "log",
+    "color"
   ],
   "author": "jikurata",
   "license": "ISC",
   "devDependencies": {
-    "@jikurata/taste": "0.0.3"
+    "@jikurata/taste": "1.1.0"
+  },
+  "dependencies": {
+    "@jikurata/events": "^4.0.0"
   }
 }

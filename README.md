@@ -1,5 +1,5 @@
-# Logger v0.2.2
-Expanded console logging and recording
+# Logger v1.0.0
+Expanded console logging
 ---
 ## Install
 ```
@@ -30,24 +30,22 @@ const err = new Error('some error');
 Logger.error(err); // Error: some error <Stack trace>
 ```
 ## Advanced Usage
+Logger is a Singleton, so the same object is referenced when it is called in other files.
 ```
-// Logger is a Singleton, so the same object is referenced when it is called in other files
+// Logger creates a Record object each time it is invoked
+const record = Logger.log('foo');
+console.log(record) // { type: 'info', timestamp: <Date>, message: 'foo' }
 
-// Logger creates a Log object for every log
-const log = Logger.log('foo');
-console.log(log) // { type: 'info', timestamp: <Date>, message: 'foo' }
-
-// Logger will emit the Log object through the 'log' event
-Logger.on('log', (log) => {
+// Logger will emit the Record object through the 'record' event after it is invoked
+Logger.on('record', (record) => {
     // do stuff
 });
-Logger.log('foo'); // does stuff
 
 // Event emitting can be disabled through the emitLog property
 Logger.emitLog = false;
 
-// Logs are also stored in the Logger history array
-console.log(Logger.history) // [Log, Log, Log...]
+// Records are also stored in the Logger history array
+console.log(Logger.history) // [Record, Record, Record...]
 
 // By default, the history size limit is set to 50, but can be modified through the historyLimit property
 Logger.historyLimit = 10; // Sets limit to the 10 most recent log entries
@@ -56,28 +54,31 @@ Logger.historyLimit = 10; // Sets limit to the 10 most recent log entries
 ---
 - **class** Logger<br>
     - **Properties**:<br>
-        *id*: {Number} The id is the pid of the process that is referencing it<br>
-        *history*: {Log[]} Retains the most recent entries from Logger<br>
+        *history*: {Array[Record]} Retains the most recent entries from Logger<br>
         *historyLimit*: {Number} (Default: 50) The maximum entries to retain at any time<br>
+        *useColors*: {Boolean} (Default: true) Toggles writing to stdout<br>
         *printMessage*: {Boolean} (Default: true) Toggles writing to stdout<br>
         *showTimestamp*: {Boolean} (Default: true) Displays Timestamp when printing a message<br>
-        *emitLog*: {Boolean} (Default: true) Emits a log event whenever an entry is created<br>
+        *showTimezone*: {Boolean} (Default: false) Displays Timezone when printing a message<br>
+        *emitRecord*: {Boolean} (Default: true) Emits a record event whenever an entry is created<br>
     - **Methods**:<br>
-        {Log} *info(...args)*: Write a message to stdout with the info format<br>
-        {Log} *log(...args)*: Alias for info<br>
-        {Log} *warn(...args)*: Write a message to stderr with the warning format<br>
-        {Log} *error(...args)*: Write a error message to stderr with the error format<br>
-        {Void} *printLog(log {Log})*: Formats a Log object and prints to stdout<br>
+        *info(...args)*: Write a message to stdout with the info format<br>
+        *log(...args)*: Alias for info<br>
+        *warn(...args)*: Write a message to stderr with the warning format<br>
+        *error(...args)*: Write a error message to stderr with the error format<br>
 
-- **object** Log<br>
+- **object** Record<br>
     - **Properties**:<br>
         *type*: {String} Will be labeled as info, warn, or error<br>
-        *timestamp*: {Date} The datetime when the log was created<br>
-        *message*: {String} The content of the log<br>
+        *timestamp*: {Date} The datetime when the record was created<br>
+        *message*: {String} The content of the record<br>
+        *colored*: {String} The message with 8-bit ANSI color codes embedded<br>
 ## Version Log
 ---
-### v0.2.2
-
+### v1.0.0
+- Refactor print methods to act as wrappers for original console methods
+- Implemented colored printing mode. Display data types with prefined color sets
+- Uses 8-bit ANSI color codes
 
 ### v0.2.1
 - Refactored Jest tests to Taste tests
