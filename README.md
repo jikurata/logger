@@ -1,4 +1,4 @@
-# Logger v1.0.0
+# Logger v1.0.1
 Expanded console logging
 ---
 ## Install
@@ -75,6 +75,9 @@ Logger.historyLimit = 10; // Sets limit to the 10 most recent log entries
         *colored*: {String} The message with 8-bit ANSI color codes embedded<br>
 ## Version Log
 ---
+### v1.0.1
+- Fixed an bug that resulted in a TypeError. Objects now check if constructor is a valid property
+
 ### v1.0.0
 - Refactor print methods to act as wrappers for original console methods
 - Implemented colored printing mode. Display data types with prefined color sets

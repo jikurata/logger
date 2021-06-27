@@ -106,7 +106,7 @@ class Logger extends EventEmitter {
     const record = new Record({
       type: type,
       timestamp: t,
-      message: format(...args),
+      message: this.removeANSIColors(s),
       colored: s
     });
     // Add record to history
@@ -168,7 +168,7 @@ class Logger extends EventEmitter {
       const type = this.getDataType(arg);
       const argStr = format(arg);
       if ( type === 'object' ) {
-        const objectClass = arg.constructor.name;
+        const objectClass = (arg.constructor && arg.constructor.name) ? arg.constructor.name : '';
         // Check for cyclic references
         if ( objStack.indexOf(arg) === -1 ) {
           objStack.push(arg);
